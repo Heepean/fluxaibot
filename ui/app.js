@@ -125,7 +125,9 @@ const app = {
     showMessage(message, type = 'error') {
         const element = document.getElementById('app-message');
         window.clearTimeout(this.messageTimer);
-        element.textContent = message || '';
+        element.textContent = message
+            ? window.FluxAiBotI18n.translate(message)
+            : '';
         element.className = message ? `app-message ${type}` : 'app-message';
         element.hidden = !message;
         if (message && type === 'success') {
@@ -208,15 +210,22 @@ const app = {
 
     runtimeSummary(state, modelName, backend, device) {
         if (state === 'ready') {
-            const accelerator = backend
-                ? ` Режим: ${backend.toUpperCase()}${device?.name ? ` · ${device.name}` : ''}.`
-                : '';
-            return `${modelName} запущена и готова принимать локальные запросы.${accelerator}`;
+            if (backend && device?.name) {
+                return window.FluxAiBotI18n.translate(
+                    `{{model}} запущена и готова принимать локальные запросы. Режим: {{backend}} · {{device}}.`
+                        .replace('{{model}}', modelName)
+                        .replace('{{backend}}', backend.toUpperCase())
+                        .replace('{{device}}', device.name)
+                );
+            }
+            return window.FluxAiBotI18n.translate(
+                `{{model}} запущена и готова принимать локальные запросы.`.replace('{{model}}', modelName)
+            );
         }
-        if (state === 'starting' || state === 'loading') return 'Подождите, пока runtime подготовит модель.';
-        if (state === 'stopping') return 'Runtime завершает работу.';
-        if (state === 'failed') return 'Не удалось запустить модель. Подробности указаны в сообщении об ошибке.';
-        return 'Выберите GGUF-файл и запустите его, чтобы начать работу.';
+        if (state === 'starting' || state === 'loading') return window.FluxAiBotI18n.translate('Подождите, пока runtime подготовит модель.');
+        if (state === 'stopping') return window.FluxAiBotI18n.translate('Runtime завершает работу.');
+        if (state === 'failed') return window.FluxAiBotI18n.translate('Не удалось запустить модель. Подробности указаны в сообщении об ошибке.');
+        return window.FluxAiBotI18n.translate('Выберите GGUF-файл и запустите его, чтобы начать работу.');
     },
 
     updateRuntimeIndicator(state) {
@@ -311,13 +320,15 @@ const app = {
             if (integration.detected_version) {
                 const version = document.createElement('p');
                 version.className = 'integration-version';
-                version.textContent = `Обнаружена версия ${integration.detected_version}`;
+                version.textContent = window.FluxAiBotI18n.translate(
+                    `Обнаружена версия {{version}}`.replace('{{version}}', integration.detected_version)
+                );
                 card.append(version);
             }
             if (integration.notes) {
                 const notes = document.createElement('p');
                 notes.className = 'integration-notes';
-                notes.textContent = integration.notes;
+                notes.textContent = window.FluxAiBotI18n.translate(integration.notes);
                 card.append(notes);
             }
 
@@ -330,9 +341,13 @@ const app = {
                 mark.className = `feature-mark${feature.supported ? ' is-supported' : ''}`;
                 mark.textContent = feature.supported ? '✓' : '—';
                 const text = document.createElement('span');
-                text.textContent = feature.note
-                    ? `${feature.name}: ${feature.note}`
-                    : feature.name;
+                const featureName = window.FluxAiBotI18n.translate(feature.name);
+                const featureNote = feature.note
+                    ? window.FluxAiBotI18n.translate(feature.note)
+                    : '';
+                text.textContent = featureNote
+                    ? `${featureName}: ${featureNote}`
+                    : featureName;
                 row.append(mark, text);
                 features.append(row);
             });
@@ -376,7 +391,7 @@ const app = {
         time.textContent = new Date().toLocaleTimeString();
         const text = document.createElement('span');
         text.className = 'log-msg';
-        text.textContent = message;
+        text.textContent = window.FluxAiBotI18n.translate(message);
         entry.append(time, text);
         log.append(entry);
 
@@ -452,18 +467,30 @@ const app = {
             this.hubModels = result.models;
             const devices = Array.isArray(result.compute_devices) ? result.compute_devices : [];
             const gpuInfo = result.available_vram_bytes
-                ? ` · VRAM: ${this.formatBytes(result.available_vram_bytes)} свободно`
+                ? ` · ${window.FluxAiBotI18n.translate(
+                    `VRAM: {{memory}} свободно`.replace('{{memory}}', this.formatBytes(result.available_vram_bytes))
+                )}`
                 : '';
             const deviceInfo = devices.length ? ` · ${devices.map(device => device.name).join(', ')}` : '';
             document.getElementById('hub-hardware-info').textContent =
-                `ОЗУ: ${this.formatBytes(result.total_memory_bytes)} всего, ${this.formatBytes(result.available_memory_bytes)} доступно сейчас${gpuInfo}${deviceInfo}`;
+                window.FluxAiBotI18n.translate(
+                    `ОЗУ: {{total}} всего, {{available}} доступно сейчас{{gpu}}{{devices}}`
+                        .replace('{{total}}', this.formatBytes(result.total_memory_bytes))
+                        .replace('{{available}}', this.formatBytes(result.available_memory_bytes))
+                        .replace('{{gpu}}', gpuInfo)
+                        .replace('{{devices}}', deviceInfo)
+                );
             this.renderHubModels();
             const warnings = [];
             if (result.warnings?.length) {
-                warnings.push(`Часть результатов Hugging Face пропущена. Например: ${result.warnings[0]}`);
+                warnings.push(window.FluxAiBotI18n.translate(
+                    `Часть результатов Hugging Face пропущена. Например: ${result.warnings[0]}`
+                ));
             }
             if (result.hardware_warnings?.length) {
-                warnings.push(`Проверка GPU: ${result.hardware_warnings[0]}`);
+                warnings.push(window.FluxAiBotI18n.translate(
+                    `Проверка GPU: ${result.hardware_warnings[0]}`
+                ));
             }
             if (warnings.length) {
                 this.showMessage(warnings.join(' '));
@@ -488,8 +515,21 @@ const app = {
             (!recommendedOnly || model.recommended_for_memory)
             && (purpose === 'all' || model.purpose === purpose)
         );
+        const locale = window.FluxAiBotI18n.getLocale();
+        const count = Number(models.length).toLocaleString(locale);
+        const resultCountTemplate = purpose === 'coding'
+            ? recommendedOnly
+                ? '{{count}} моделей для кодинга подходят по текущей доступной памяти'
+                : '{{count}} моделей для кодинга'
+            : purpose === 'universal'
+                ? recommendedOnly
+                    ? '{{count}} моделей универсальных подходят по текущей доступной памяти'
+                    : '{{count}} моделей универсальных'
+                : recommendedOnly
+                    ? '{{count}} моделей подходят по текущей доступной памяти'
+                    : '{{count}} моделей';
         document.getElementById('hub-results-count').textContent =
-            `${models.length} моделей${purpose === 'coding' ? ' для кодинга' : purpose === 'universal' ? ' универсальных' : ''}${recommendedOnly ? ' подходят по текущей доступной памяти' : ''}`;
+            window.FluxAiBotI18n.translate(resultCountTemplate.replace('{{count}}', count));
         grid.replaceChildren();
         if (!models.length) {
             grid.append(this.createEmptyState(
@@ -540,7 +580,11 @@ const app = {
 
             const description = document.createElement('p');
             description.className = 'hub-model-description';
-            description.textContent = `Лицензия: ${model.license || 'не указана в карточке'} · ориентир памяти от ${this.formatBytes(model.estimated_ram_bytes)} с учётом доступных ОЗУ и VRAM. Это оценка; сверяйте требования на странице автора.`;
+            description.textContent = window.FluxAiBotI18n.translate(
+                'Лицензия: {{license}} · ориентир памяти от {{memory}} с учётом доступных ОЗУ и VRAM. Это оценка; сверяйте требования на странице автора.'
+                    .replace('{{license}}', model.license || window.FluxAiBotI18n.translate('не указана в карточке'))
+                    .replace('{{memory}}', this.formatBytes(model.estimated_ram_bytes))
+            );
 
             const controls = document.createElement('div');
             controls.className = 'hub-model-controls';
@@ -550,7 +594,22 @@ const app = {
             model.variants.forEach((item, index) => {
                 const option = document.createElement('option');
                 option.value = String(index);
-                option.textContent = `${item.label} · ${this.formatBytes(item.size_bytes)} · ОЗУ ~${this.formatBytes(item.estimated_ram_bytes)}${item.recommended_for_memory ? ' · подходит' : ''}${item.files.length > 1 ? ` · ${item.files.length} частей` : ''}`;
+                const recommended = item.recommended_for_memory
+                    ? ` · ${window.FluxAiBotI18n.translate('подходит')}`
+                    : '';
+                const shards = item.files.length > 1
+                    ? ` · ${window.FluxAiBotI18n.translate(
+                        `{{count}} частей`.replace('{{count}}', Number(item.files.length).toLocaleString(locale))
+                    )}`
+                    : '';
+                option.textContent = window.FluxAiBotI18n.translate(
+                    '{{label}} · {{size}} · ОЗУ ~{{memory}}{{recommended}}{{shards}}'
+                        .replace('{{label}}', item.label)
+                        .replace('{{size}}', this.formatBytes(item.size_bytes))
+                        .replace('{{memory}}', this.formatBytes(item.estimated_ram_bytes))
+                        .replace('{{recommended}}', recommended)
+                        .replace('{{shards}}', shards)
+                );
                 variant.append(option);
             });
             const download = document.createElement('button');
@@ -938,12 +997,15 @@ const app = {
         const value = Number(bytes);
         if (!Number.isFinite(value) || value < 0) return 'Размер неизвестен';
         const locale = window.FluxAiBotI18n.getLocale();
+        const isMegabytes = value < 1024 ** 3;
         const formatter = new Intl.NumberFormat(locale, {
-            minimumFractionDigits: value < 1024 ** 3 ? 1 : 2,
-            maximumFractionDigits: value < 1024 ** 3 ? 1 : 2
+            style: 'unit',
+            unit: isMegabytes ? 'megabyte' : 'gigabyte',
+            unitDisplay: 'short',
+            minimumFractionDigits: isMegabytes ? 1 : 2,
+            maximumFractionDigits: isMegabytes ? 1 : 2
         });
-        if (value < 1024 ** 3) return `${formatter.format(value / 1024 ** 2)} MB`;
-        return `${formatter.format(value / 1024 ** 3)} GB`;
+        return formatter.format(value / (isMegabytes ? 1024 ** 2 : 1024 ** 3));
     },
 
     errorMessage(error) {

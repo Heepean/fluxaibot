@@ -205,7 +205,8 @@ pub async fn search_models(
     let mut warnings = Vec::new();
     for detail in details {
         match detail {
-            Ok(model) => models.push(model),
+            Ok(Some(model)) => models.push(model),
+            Ok(None) => {}
             Err(warning) => warnings.push(warning),
         }
     }
@@ -493,7 +494,7 @@ fn model_from_record(
     details: HubModelRecord,
     available_memory_bytes: u64,
     max_size_bytes: Option<u64>,
-) -> HubResult<HubModel> {
+) -> HubResult<Option<HubModel>> {
     if details.private || is_gated(&details.gated) {
         return Err(format!("Model {} is not public and ungated", summary.id));
     }
@@ -504,16 +505,15 @@ fn model_from_record(
     }
     validate_revision(&details.sha)?;
     let variants = model_variants(&details.siblings, available_memory_bytes);
-    let variants = variants
-        .into_iter()
-        .filter(|variant| max_size_bytes.map_or(true, |limit| variant.size_bytes <= limit))
-        .collect::<Vec<_>>();
     if variants.is_empty() {
         return Err(format!(
             "No downloadable GGUF files found for {}",
             summary.id
         ));
     }
+    let Some(variants) = filter_variants_by_size(variants, max_size_bytes) else {
+        return Ok(None);
+    };
     let smallest_size = variants[0].size_bytes;
     let estimated_ram_bytes = estimated_ram(smallest_size);
     let recommended_for_memory = variants
@@ -536,7 +536,7 @@ fn model_from_record(
                 .find_map(|tag| tag.strip_prefix("license:").map(str::to_string))
         });
 
-    Ok(HubModel {
+    Ok(Some(HubModel {
         purpose: classify_purpose(&summary.id, &details.tags),
         repo_id: summary.id,
         revision: details.sha,
@@ -546,7 +546,18 @@ fn model_from_record(
         variants,
         estimated_ram_bytes,
         recommended_for_memory,
-    })
+    }))
+}
+
+fn filter_variants_by_size(
+    variants: Vec<ModelVariant>,
+    max_size_bytes: Option<u64>,
+) -> Option<Vec<ModelVariant>> {
+    let filtered = variants
+        .into_iter()
+        .filter(|variant| max_size_bytes.map_or(true, |limit| variant.size_bytes <= limit))
+        .collect::<Vec<_>>();
+    (!filtered.is_empty()).then_some(filtered)
 }
 
 fn classify_purpose(repo_id: &str, tags: &[String]) -> ModelPurpose {
@@ -845,6 +856,20 @@ mod tests {
         }
     }
 
+    fn model_record(id: &str, siblings: Vec<HubSibling>) -> HubModelRecord {
+        HubModelRecord {
+            id: id.to_string(),
+            private: false,
+            gated: serde_json::Value::Bool(false),
+            downloads: 0,
+            likes: 0,
+            tags: vec!["gguf".to_string()],
+            sha: "0123456789abcdef0123456789abcdef01234567".to_string(),
+            card_data: None,
+            siblings,
+        }
+    }
+
     #[test]
     fn includes_only_complete_gguf_models_and_excludes_projector_sidecars() {
         let siblings = vec![
@@ -884,6 +909,63 @@ mod tests {
         assert!(variants[0].recommended_for_memory);
         assert!(!variants[1].recommended_for_memory);
         assert_eq!(variants[1].estimated_ram_bytes, 5 * 1024 * 1024 * 1024 / 2);
+    }
+
+    #[test]
+    fn size_filter_skips_large_models_without_treating_them_as_missing_gguf() {
+        let variants = model_variants(
+            &[
+                sibling("Ornith-1.5-35B-Q4_K_M.gguf", 21 * 1024 * 1024 * 1024),
+                sibling("Ornith-1.5-35B-Q5_K_M.gguf", 24 * 1024 * 1024 * 1024),
+            ],
+            u64::MAX,
+        );
+
+        assert!(filter_variants_by_size(variants.clone(), Some(16 * 1024 * 1024 * 1024)).is_none());
+        assert_eq!(
+            filter_variants_by_size(variants, Some(24 * 1024 * 1024 * 1024))
+                .expect("Q4 and Q5 variants fit the size filter")
+                .len(),
+            2
+        );
+    }
+
+    #[test]
+    fn model_with_only_oversized_gguf_variants_is_filtered_without_a_false_warning() {
+        let id = "ornith-ai/Ornith-1.5-35B-A3B-GGUF";
+        let model = model_record(
+            id,
+            vec![sibling(
+                "Ornith-1.5-35B-Q4_K_M.gguf",
+                21 * 1024 * 1024 * 1024,
+            )],
+        );
+        let details = model_record(
+            id,
+            vec![sibling(
+                "Ornith-1.5-35B-Q4_K_M.gguf",
+                21 * 1024 * 1024 * 1024,
+            )],
+        );
+
+        assert!(
+            model_from_record(model, details, u64::MAX, Some(16 * 1024 * 1024 * 1024))
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn model_without_any_gguf_variant_still_reports_the_actual_metadata_problem() {
+        let id = "author/no-gguf";
+        let summary = model_record(id, vec![]);
+        let details = model_record(id, vec![]);
+
+        let error = match model_from_record(summary, details, u64::MAX, None) {
+            Err(error) => error,
+            Ok(_) => panic!("metadata without GGUF files should be rejected"),
+        };
+        assert!(error.contains("No downloadable GGUF files found"));
     }
 
     #[test]
