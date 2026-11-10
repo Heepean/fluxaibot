@@ -15,6 +15,7 @@
 - frontend typecheck/lint/test
 - `.\build-release.ps1` builds a timestamped `dist\release-<date>` directory containing the portable EXE, NSIS setup EXE, and `SHA256SUMS.txt`.
 - Verify both artifacts on a clean Windows VM.
+- Run `Publish-to-GitHub.bat` to verify the latest release files, sign in through GitHub's official browser flow if needed, push `main` and its LFS assets, and publish v1.0.0 to the configured repository.
 
 ## Distribution
 - CPU, Vulkan, and CUDA `llama-server` executables and required CUDA/MSVC runtime DLLs are embedded in the application binary and extracted to `%LOCALAPPDATA%\FluxAiBot\runtime` only after SHA-256 validation.

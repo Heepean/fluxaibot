@@ -15,6 +15,8 @@ FluxAiBot is a Windows desktop application for running local GGUF models through
 
 See the [Russian user guide](docs/USER_GUIDE_RU.md) and [v1.0.0 release notes](docs/RELEASE_NOTES_v1.0.0.md) for installation, model selection, GPU behavior, API setup, and limitations.
 
+On Windows, run `Publish-to-GitHub.bat` to push the prepared source and release. If needed, it opens the official browser sign-in before publishing to [GitHub Releases](https://github.com/Heepean/fluxaibot/releases).
+
 The portable application is distributed as a single EXE; the installer is a separate NSIS setup EXE. The verified `llama-server` runtime is embedded in the application and extracted to `%LOCALAPPDATA%\\FluxAiBot\\runtime` on first use. The application does not include a GGUF model. Model files remain in the folder you choose. The last successfully scanned model folder is saved in the local application database and restored on the next launch; use **Scan** to refresh its model list. The API gateway listens on `127.0.0.1:12345`; the bundled model runtime listens on `127.0.0.1:12346`.
 
 Scanning only reads directory entries and model metadata; it does not hash multi-gigabyte model files. Before launch, the selected model's size and modification timestamp are checked against the scan. Files named `mmproj-*.gguf` are multimodal projector sidecars, not standalone language models. Select the main model GGUF to start inference; projector files are detected but cannot be launched separately.

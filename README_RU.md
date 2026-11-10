@@ -8,6 +8,8 @@ FluxAiBot — настольное приложение для Windows 10/11 x64
 
 [Скачать последнюю версию](https://github.com/Heepean/fluxaibot/releases/latest) — portable EXE, установщик и SHA-256-суммы.
 
+Чтобы одной кнопкой отправить исходники и опубликовать релиз v1.0.0, запустите [Publish-to-GitHub.bat](Publish-to-GitHub.bat). Если потребуется, скрипт откроет официальный вход GitHub в браузере; после вашего подтверждения отправит проект, файлы Git LFS и установщик с portable-версией в Releases. Пароль или токен не запрашиваются.
+
 ## Портативная версия и установщик
 
 Портативная версия поставляется одним файлом `FluxAiBot-portable.exe`; установщик — отдельным `FluxAiBot-setup.exe` (NSIS). Runtime `llama-server` встроен в EXE, проверяется по SHA-256 из манифеста и при первом запуске атомарно извлекается в `%LOCALAPPDATA%\FluxAiBot\runtime`. GGUF-модели остаются во выбранной пользователем папке, а база и настройки — в `%LOCALAPPDATA%\FluxAiBot`.
