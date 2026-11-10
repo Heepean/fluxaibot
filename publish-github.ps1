@@ -103,6 +103,8 @@ if ($LASTEXITCODE -ne 0 -or $authenticatedUser -ne 'Heepean') {
     throw "Sign in to GitHub as Heepean before publishing (current account: $authenticatedUser)."
 }
 
+Invoke-Gh -Arguments @('auth', 'setup-git', '--hostname', 'github.com')
+
 $remote = git remote get-url origin 2>$null
 if ($LASTEXITCODE -ne 0) {
     Invoke-Git -Arguments @('remote', 'add', 'origin', $remoteUrl)
