@@ -1,0 +1,2 @@
+src-tauri/resources/llama-server*.exe filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/cuda/*.dll filter=lfs diff=lfs merge=lfs -text

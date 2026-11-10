@@ -1,0 +1,65 @@
+{
+  "name": "llama.cpp llama-server",
+  "version": "0.9.0",
+  "source": "https://github.com/ggml-org/llama.cpp",
+  "source_commit": "cd959bae99ff4bed22bef2604f45241c09bbb8c8",
+  "sha256": "8eed88ae41f1daf78a42c33e420107ef5fea8643d8df87c46a54a40a06d49e23",
+  "vulkan_sha256": "398dd3cb03e0a72137622df8b595a45a8ed3edf6ac4bc546cd83f0ac10712556",
+  "cuda_sha256": "b7da063c1b2892c435b162c94abe4e315d893f8fe0dfe5c10b31fab887edd41a",
+  "cuda_dependencies": [
+    {
+      "filename": "cublas64_13.dll",
+      "sha256": "db5a1d5a0ed0ef126e005fc7449d3584353aaeb8739a18d716fe74be1254a3da"
+    },
+    {
+      "filename": "cublasLt64_13.dll",
+      "sha256": "ca478e1ea932f883ef4fc284f8f33d910079df4e77f9a2ec38d9b4387795f96f"
+    },
+    {
+      "filename": "cudart64_13.dll",
+      "sha256": "16ab35d8150b6105b7e49da264d360db4ece090157ad48d226c1dc7254136008"
+    },
+    {
+      "filename": "msvcp140.dll",
+      "sha256": "0f885b509a685d2bbfa652fed26b5fb31d88fbdab0a978c641d1c7b8aa460aa9"
+    },
+    {
+      "filename": "vcruntime140.dll",
+      "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066"
+    },
+    {
+      "filename": "vcruntime140_1.dll",
+      "sha256": "1f2d41c4aa5db0bc33ebf7b66d72943a817d7ce6cbe880502a9403823633093f"
+    }
+  ],
+  "authenticode": "not signed; locally built from the pinned official source",
+  "build": {
+    "cpu": {
+      "target": "Windows x64 CPU",
+      "compiler": "MSVC 19.44.35229.0",
+      "cmake": "4.4.5",
+      "shared_libraries": false,
+      "openmp": false,
+      "native_cpu_optimizations": false,
+      "web_ui": false
+    },
+    "vulkan": {
+      "target": "Windows x64 Vulkan and CPU fallback",
+      "compiler": "MSVC 19.44.35229.0",
+      "cmake": "4.4.4",
+      "shared_libraries": false,
+      "vulkan_sdk": "1.4.363.0",
+      "native_cpu_optimizations": false,
+      "web_ui": false
+    },
+    "cuda": {
+      "target": "Windows x64 CUDA and CPU fallback",
+      "compiler": "MSVC 19.44.35229.0",
+      "cmake": "4.4.5",
+      "shared_libraries": false,
+      "cuda_toolkit": "13.5.37",
+      "native_cpu_optimizations": false,
+      "web_ui": false
+    }
+  }
+}

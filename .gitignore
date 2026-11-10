@@ -1,0 +1,17 @@
+/target/
+/dist/
+/data/
+/FluxAiBot_data/
+/node_modules/
+/src-tauri/node_modules/
+/src-tauri/target/
+/*.exe
+*.log
+*.sqlite
+*.sqlite3
+*.db
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

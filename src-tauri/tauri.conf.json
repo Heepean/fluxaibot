@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FluxAiBot",
+  "version": "1.0.0",
+  "identifier": "com.fluxaibot.app",
+  "app": {
+    "withGlobalTauri": true,
+    "security": {
+      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://127.0.0.1:12345 ws://127.0.0.1:12345; connect-src 'self' http://127.0.0.1:12345 ws://127.0.0.1:12345;"
+    }
+  },
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.ico"
+    ]
+  }
+}

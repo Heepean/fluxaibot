@@ -1,0 +1,26 @@
+[workspace]
+members = ["src-tauri"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Local AI Hub"]
+
+[workspace.lints.rust]
+unused = "allow"
+
+[workspace.lints.clippy]
+all = "warn"
+correctness = "warn"
+suspicious = "warn"
+style = "warn"
+complexity = "warn"
+perf = "warn"
+
+[profile.release]
+opt-level = 3
+lto = false
+codegen-units = 16
+panic = "unwind"

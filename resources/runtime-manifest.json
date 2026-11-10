@@ -1,0 +1,17 @@
+{
+  "name": "llama.cpp llama-server",
+  "version": "0.9.0",
+  "source": "https://github.com/ggml-org/llama.cpp",
+  "source_commit": "cd959bae99ff4bed22bef2604f45241c09bbb8c8",
+  "sha256": "8eed88ae41f1daf78a42c33e420107ef5fea8643d8df87c46a54a40a06d49e23",
+  "authenticode": "not signed; locally built from the pinned official source",
+  "build": {
+    "target": "Windows x64 CPU",
+    "compiler": "MSVC 19.44.35229.0",
+    "cmake": "4.4.5",
+    "shared_libraries": false,
+    "openmp": false,
+    "native_cpu_optimizations": false,
+    "web_ui": false
+  }
+}

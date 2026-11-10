@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxAiBot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --surface-hover: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #334155;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+        .app { display: flex; height: 100%; }
+        .header {
+            background: var(--surface-color);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.25rem; }
+        .logo-icon {
+            width: 32px; height: 32px; background: var(--accent);
+            border-radius: 8px; display: flex; align-items: center;
+            justify-content: center; font-weight: 900; color: white;
+        }
+        .logo-text { color: var(--text-primary); }
+        .status-indicator {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.875rem; color: var(--text-secondary);
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+        .status-dot.online { box-shadow: 0 0 8px var(--success); }
+        .status-dot.offline { background: var(--danger); }
+        .nav {
+            width: 220px; background: var(--surface-color);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding-top: 1rem;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.875rem 1.5rem; background: transparent;
+            border: none; color: var(--text-secondary);
+            cursor: pointer; font-size: 0.9375rem; text-align: left;
+        }
+        .nav-item:hover { background: var(--surface-hover); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent); color: white; }
+        .main { flex: 1; overflow-y: auto; padding: 1.5rem; }
+        .section { display: none; }
+        .section.active { display: block; }
+        h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); }
+        h2 { font-size: 1.125rem; margin-bottom: 1rem; color: var(--text-secondary); }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem; margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--surface-color); padding: 1.25rem;
+            border-radius: 8px; border: 1px solid var(--border);
+        }
+        .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .quick-actions { margin-bottom: 2rem; }
+        .action-buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.625rem 1.25rem; border: none; border-radius: 6px;
+            font-size: 0.9375rem; font-weight: 500; cursor: pointer;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover:not(:disabled) { background: #059669; }
+        .btn-secondary { background: var(--surface-hover); color: var(--text-primary); }
+        .btn-secondary:hover:not(:disabled) { background: var(--surface-color); }
+        .models-controls {
+            display: flex; gap: 1rem; align-items: center;
+            margin-bottom: 1.5rem; flex-wrap: wrap;
+        }
+        .folder-selector {
+            display: flex; align-items: center; gap: 0.75rem;
+            background: var(--surface-color); padding: 0.75rem 1rem;
+            border-radius: 6px; border: 1px solid var(--border);
+        }
+        .folder-path { flex: 1; color: var(--text-secondary); font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .models-list { background: var(--surface-color); border-radius: 8px; border: 1px solid var(--border); }
+        .empty-state { padding: 3rem; text-align: center; color: var(--text-secondary); }
+        .model-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem; border-bottom: 1px solid var(--border);
+        }
+        .model-item:last-child { border-bottom: none; }
+        .model-info { display: flex; flex-direction: column; gap: 0.25rem; }
+        .model-name { font-weight: 500; color: var(--text-primary); }
+        .model-path { font-size: 0.8125rem; color: var(--text-secondary); }
+        .model-actions { display: flex; gap: 0.5rem; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .integrations-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;
+        }
+        .integration-card {
+            background: var(--surface-color); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.25rem;
+        }
+        .integration-header {
+            display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;
+        }
+        .integration-name { font-weight: 600; color: var(--text-primary); }
+        .integration-status {
+            font-size: 0.75rem; padding: 0.25rem 0.5rem;
+            border-radius: 4px; text-transform: uppercase;
+        }
+        .status-detected { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .status-not-detected { background: rgba(94, 234, 212, 0.2); color: #22d3ee; }
+        .status-failed { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .integration-features { margin-bottom: 1rem; }
+        .integration-features h4 { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        .feature-item { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
+        .integration-actions { display: flex; gap: 0.5rem; }
+        .gateway-info {
+            background: var(--surface-color); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .info-card h3 { margin-bottom: 1rem; color: var(--text-primary); }
+        .info-card p { margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9375rem; }
+        .api-endpoints { margin-bottom: 2rem; }
+        .api-endpoints table {
+            width: 100%; border-collapse: collapse; background: var(--surface-color);
+            border-radius: 8px; overflow: hidden; border: 1px solid var(--border);
+        }
+        .api-endpoints th {
+            background: var(--surface-hover); padding: 0.75rem;
+            text-align: left; color: var(--text-secondary); font-size: 0.875rem;
+        }
+        .api-endpoints td {
+            padding: 0.75rem; border-bottom: 1px solid var(--border);
+            color: var(--text-primary); font-size: 0.875rem;
+        }
+        .api-endpoints tr:last-child td { border-bottom: none; }
+        .example-code {
+            background: var(--surface-color); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.5rem;
+        }
+        .example-code pre {
+            background: #000; padding: 1rem; border-radius: 6px;
+            overflow-x: auto; font-size: 0.875rem; color: #d4d4d4;
+        }
+        .settings-form {
+            background: var(--surface-color); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .setting-group { margin-bottom: 1rem; }
+        .setting-group label {
+            display: block; margin-bottom: 0.5rem;
+            color: var(--text-secondary); font-size: 0.9375rem;
+        }
+        .setting-group input, .setting-group select {
+            width: 100%; padding: 0.625rem; background: var(--bg-color);
+            border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-primary); font-size: 0.9375rem;
+        }
+        .danger-zone {
+            background: var(--surface-color); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.5rem;
+        }
+        .diagnostics-output {
+            margin-top: 1rem; padding: 1rem; background: var(--bg-color);
+            border-radius: 6px; font-family: monospace; font-size: 0.875rem;
+            color: var(--text-secondary); max-height: 300px; overflow-y: auto;
+        }
+        .activity-log {
+            background: var(--surface-color); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1rem; max-height: 300px;
+            overflow-y: auto; font-family: monospace; font-size: 0.875rem;
+        }
+        .log-entry { margin-bottom: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+        .log-entry:nth-child(even) { background: rgba(255,255,255,0.05); }
+        .log-time { color: var(--text-secondary); margin-right: 0.75rem; }
+        @media (max-width: 768px) {
+            .app { flex-direction: column; }
+            .nav {
+                width: 100%; flex-direction: row; overflow-x: auto;
+                border-right: none; border-bottom: 1px solid var(--border);
+            }
+            .nav-item { white-space: nowrap; flex-shrink: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">AI</div>
+                <div class="logo-text">FluxAiBot</div>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot" id="status-dot"></span>
+                <span class="status-text" id="status-text">Подключение...</span>
+            </div>
+        </header>
+        <nav class="nav">
+            <button class="nav-item active" onclick="app.navigateTo('dashboard')" data-section="dashboard">Дашборд</button>
+            <button class="nav-item" onclick="app.navigateTo('models')" data-section="models">Модели</button>
+            <button class="nav-item" onclick="app.navigateTo('integrations')" data-section="integrations">Интеграции</button>
+            <button class="nav-item" onclick="app.navigateTo('gateway')" data-section="gateway">Шлюз API</button>
+            <button class="nav-item" onclick="app.navigateTo('settings')" data-section="settings">Настройки</button>
+        </nav>
+        <main class="main">
+            <section id="dashboard" class="section active">
+                <h1>Дашборд</h1>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-models">0</div>
+                        <div class="stat-label">Моделей</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-runtime">Остановлен</div>
+                        <div class="stat-label">Статус рантайма</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-integrations">0</div>
+                        <div class="stat-label">Интеграций</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-port">12345</div>
+                        <div class="stat-label">Порт шлюза</div>
+                    </div>
+                </div>
+                <div class="quick-actions">
+                    <h2>Быстрые действия</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="app.navigateTo('models')">Управление моделями</button>
+                        <button class="btn btn-secondary" onclick="app.navigateTo('integrations')">Настроить интеграции</button>
+                        <button class="btn btn-success" onclick="app.startRuntime()">Запустить рантайм</button>
+                        <button class="btn btn-secondary" onclick="app.stopRuntime()">Остановить рантайм</button>
+                    </div>
+                </div>
+                <div class="recent-activity">
+                    <h2>Лог событий</h2>
+                    <div id="activity-log" class="activity-log">
+                        <div class="log-entry"><span class="log-time">--:--:--</span> <span class="log-msg">FluxAiBot запущен</span></div>
+                    </div>
+                </div>
+            </section>
+            <section id="models" class="section">
+                <h1>Модели</h1>
+                <div class="models-controls">
+                    <div class="folder-selector">
+                        <label>Папка с моделями:</label>
+                        <div class="folder-path" id="folder-path">Не выбрана</div>
+                        <button class="btn btn-primary" onclick="app.selectModelsFolder()">Выбрать папку</button>
+                    </div>
+                    <button class="btn btn-success" onclick="app.scanModels()" id="btn-scan" disabled>Сканировать</button>
+                    <button class="btn btn-primary" onclick="app.startSelectedModel()" id="btn-start" disabled>Запустить выбранную</button>
+                </div>
+                <div class="models-list" id="models-list">
+                    <div class="empty-state"><p>Нет моделей. Выберите папку с GGUF файлами и нажмите "Сканировать".</p></div>
+                </div>
+            </section>
+            <section id="integrations" class="section">
+                <h1>Интеграции</h1>
+                <div class="integrations-grid" id="integrations-grid"><div class="loading">Загрузка...</div></div>
+            </section>
+            <section id="gateway" class="section">
+                <h1>Шлюз API</h1>
+                <div class="gateway-info">
+                    <div class="info-card">
+                        <h3>Локальный шлюз</h3>
+                        <p><strong>URL:</strong> <span id="gateway-url">http://127.0.0.1:12345</span></p>
+                        <p><strong>Статус:</strong> <span id="gateway-status" class="status-stopped">Проверка...</span></p>
+                        <p><strong>Протоколы:</strong> chat-completions, messages, responses</p>
+                    </div>
+                    <div class="gateway-actions">
+                        <button class="btn btn-primary" onclick="app.startGateway()">Запустить шлюз</button>
+                        <button class="btn btn-secondary" onclick="app.copyUrl()">Копировать URL</button>
+                    </div>
+                </div>
+                <div class="api-endpoints">
+                    <h2>Доступные эндпоинты</h2>
+                    <table>
+                        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+                        <tbody>
+                            <tr><td>GET</td><td>/health</td><td>Проверка работоспособности</td></tr>
+                            <tr><td>POST</td><td>/v1/chat/completions</td><td>OpenAI-совместимый чат</td></tr>
+                            <tr><td>GET</td><td>/v1/models</td><td>Список моделей</td></tr>
+                            <tr><td>GET</td><td>/hub/v1/capabilities</td><td>Возможности шлюза</td></tr>
+                            <tr><td>GET</td><td>/hub/v1/status</td><td>Статус рантайма</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="example-code">
+                    <h2>Пример подключения (Python)</h2>
+                    <pre><code>import openai
+client = openai.OpenAI(
+    base_url="http://127.0.0.1:12345/v1",
+    api_key="hub-token"
+)
+response = client.chat.completions.create(
+    model="local-model",
+    messages=[{"role": "user", "content": "Привет!"}]
+)</code></pre>
+                </div>
+            </section>
+            <section id="settings" class="section">
+                <h1>Настройки</h1>
+                <div class="settings-form">
+                    <div class="setting-group">
+                        <label>Папка данных приложения:</label>
+                        <div class="setting-value" id="data-dir"></div>
+                    </div>
+                    <div class="setting-group">
+                        <label>Порт шлюза API:</label>
+                        <input type="number" id="gateway-port" value="12345" min="1024" max="65535">
+                    </div>
+                    <div class="setting-group">
+                        <label>Тема оформления:</label>
+                        <select id="theme-select">
+                            <option value="dark">Тёмная</option>
+                            <option value="light">Светлая</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="app.saveSettings()">Сохранить</button>
+                </div>
+                <div class="danger-zone">
+                    <h2>Диагностика</h2>
+                    <button class="btn btn-secondary" onclick="app.collectDiagnostics()">Собрать диагностику</button>
+                    <div id="diagnostics-output" class="diagnostics-output"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        const API_BASE = 'http://127.0.0.1:12345';
+        const TOKEN = 'hub-token';
+        
+        let currentSection = 'dashboard';
+        let modelsFolder = '';
+        let models = [];
+        
+        const app = {
+            async init() {
+                this.setupNavigation();
+                await this.loadStatus();
+                await this.loadIntegrations();
+                await this.loadSettings();
+                this.startHeartbeat();
+            },
+            setupNavigation() {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const section = item.dataset.section;
+                        this.navigateTo(section);
+                    });
+                });
+            },
+            navigateTo(section) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.toggle('active', item.dataset.section === section);
+                });
+                document.querySelectorAll('.section').forEach(s => {
+                    s.classList.toggle('active', s.id === section);
+                });
+                currentSection = section;
+            },
+            async apiCall(endpoint, options = {}) {
+                const defaultOptions = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + TOKEN,
+                    },
+                };
+                const response = await fetch(API_BASE + endpoint, { ...defaultOptions, ...options });
+                if (!response.ok) {
+                    throw new Error('API error: ' + response.status);
+                }
+                return response.json();
+            },
+            async tauriInvoke(cmd, args = {}) {
+                try {
+                    return await window.__TAURI__.invoke(cmd, args);
+                } catch (e) {
+                    console.error('Tauri invoke error:', e);
+                    throw e;
+                }
+            },
+            async loadStatus() {
+                try {
+                    const data = await this.apiCall('/hub/v1/status');
+                    document.getElementById('stat-runtime').textContent = data.runtime || 'Остановлен';
+                    document.getElementById('stat-port').textContent = '12345';
+                    
+                    // Also get models folder from Tauri
+                    try {
+                        const status = await this.tauriInvoke('get_status');
+                        const statusData = JSON.parse(status);
+                        if (statusData.models_folder) {
+                            document.getElementById('folder-path').textContent = statusData.models_folder;
+                            modelsFolder = statusData.models_folder;
+                            document.getElementById('btn-scan').disabled = false;
+                        }
+                        const dot = document.getElementById('status-dot');
+                        const text = document.getElementById('status-text');
+                        if (dot && text) {
+                            dot.className = 'status-dot ' + (statusData.runtime_state === 'Ready' ? 'online' : 'offline');
+                            text.textContent = statusData.runtime_state === 'Ready' ? 'Онлайн' : 'Офлайн';
+                        }
+                    } catch (e) { /* ignore Tauri errors */ }
+                } catch (e) { console.error('Failed to load status:', e); }
+            },
+            async loadIntegrations() {
+                try {
+                    // Use Tauri for integrations
+                    const response = await this.tauriInvoke('discover_integrations');
+                    const data = JSON.parse(response);
+                    document.getElementById('stat-integrations').textContent = data.length;
+                    this.renderIntegrations(data);
+                } catch (e) { console.error('Failed to load integrations:', e); }
+            },
+            renderIntegrations(integrations) {
+                const grid = document.getElementById('integrations-grid');
+                grid.innerHTML = '';
+                integrations.forEach(integration => {
+                    const card = document.createElement('div');
+                    card.className = 'integration-card';
+                    const statusClass = 'status-' + integration.status;
+                    const featuresHtml = (integration.features || []).map(f =>
+                        '<div class="feature-item">' + (f.supported ? '✓' : '✗') + ' ' + f.name + '</div>'
+                    ).join('');
+                    card.innerHTML = '<div class="integration-header">' +
+                        '<div class="integration-name">' + integration.app + '</div>' +
+                        '<div class="integration-status ' + statusClass + '">' + integration.status + '</div>' +
+                        '</div>' +
+                        (integration.notes ? '<div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.75rem;">' + integration.notes + '</div>' : '') +
+                        '<div class="integration-features"><h4>Возможности:</h4>' + featuresHtml + '</div>' +
+                        '<div class="integration-actions">' +
+                        '<button class="btn btn-secondary btn-sm" onclick="app.planIntegration(\'' + integration.app + '\')">Настроить</button>' +
+                        '</div>';
+                    grid.appendChild(card);
+                });
+            },
+            async loadSettings() {
+                try {
+                    const status = await this.tauriInvoke('get_status');
+                    const data = JSON.parse(status);
+                    document.getElementById('data-dir').textContent = data.models_folder || 'Не выбрана';
+                } catch (e) { console.error('Failed to load settings:', e); }
+            },
+            startHeartbeat() {
+                setInterval(async () => {
+                    if (currentSection === 'dashboard') await this.loadStatus();
+                }, 5000);
+            },
+            addLog(message) {
+                const log = document.getElementById('activity-log');
+                if (!log) return;
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                const now = new Date();
+                entry.innerHTML = '<span class="log-time">' + now.toLocaleTimeString() + '</span> <span class="log-msg">' + message + '</span>';
+                log.appendChild(entry);
+                log.scrollTop = log.scrollHeight;
+            },
+            async selectModelsFolder() {
+                try {
+                    const folder = await this.tauriInvoke('open_folder_dialog');
+                    if (folder && folder !== 'dialog_opened' && folder !== 'null' && folder !== 'undefined') {
+                        modelsFolder = folder;
+                        document.getElementById('folder-path').textContent = folder;
+                        document.getElementById('btn-scan').disabled = false;
+                        this.addLog('Выбрана папка моделей: ' + folder);
+                    }
+                } catch (e) { console.error('Failed to select folder:', e); this.addLog('Ошибка при выборе папки'); }
+            },
+            async scanModels() {
+                if (!modelsFolder) return;
+                try {
+                    document.getElementById('btn-scan').disabled = true;
+                    document.getElementById('btn-scan').textContent = 'Сканирование...';
+                    const response = await this.tauriInvoke('scan_models', { folders: [modelsFolder] });
+                    const data = JSON.parse(response);
+                    models = data.models || [];
+                    this.renderModels(models);
+                    document.getElementById('stat-models').textContent = models.length;
+                    this.addLog('Найдено моделей: ' + models.length);
+                } catch (e) { console.error('Failed to scan models:', e); this.addLog('Ошибка сканирования моделей'); }
+                finally {
+                    document.getElementById('btn-scan').disabled = false;
+                    document.getElementById('btn-scan').textContent = 'Сканировать';
+                }
+            },
+            renderModels(modelList) {
+                const list = document.getElementById('models-list');
+                if (modelList.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><p>Модели не найдены в выбранной папке.</p></div>';
+                    return;
+                }
+                list.innerHTML = '';
+                modelList.forEach((model, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'model-item';
+                    const sizeMB = (model.size / (1024*1024)).toFixed(1);
+                    item.innerHTML = '<div class="model-info">' +
+                        '<div class="model-name">' + model.id + '</div>' +
+                        '<div class="model-path">' + model.path + ' (' + sizeMB + ' MB)</div>' +
+                        '</div><div class="model-actions">' +
+                        '<button class="btn btn-sm btn-primary" onclick="app.startModel(\'' + model.id.replace(/'/g, "\\'") + '\')">Запустить</button>' +
+                        '</div>';
+                    list.appendChild(item);
+                });
+            },
+            async startModel(modelId) {
+                try {
+                    const response = await this.tauriInvoke('start_runtime', { model_id: modelId });
+                    const data = JSON.parse(response);
+                    this.addLog('Запуск модели: ' + modelId + ' — ' + data.status);
+                    await this.loadStatus();
+                } catch (e) { console.error('Failed to start model:', e); this.addLog('Ошибка запуска модели'); }
+            },
+            async startSelectedModel() {
+                if (models.length === 0) { this.addLog('Нет моделей для запуска'); return; }
+                await this.startModel(models[0].id);
+            },
+            async startRuntime() {
+                try {
+                    const response = await this.tauriInvoke('start_runtime', { model_id: '' });
+                    this.addLog('Запрос запуска рантайма отправлен');
+                    await this.loadStatus();
+                } catch (e) { console.error('Failed to start runtime:', e); }
+            },
+            async stopRuntime() {
+                try {
+                    const response = await this.tauriInvoke('stop_runtime');
+                    this.addLog('Рантайм остановлен');
+                    await this.loadStatus();
+                } catch (e) { console.error('Failed to stop runtime:', e); }
+            },
+            async startGateway() {
+                try {
+                    const response = await this.tauriInvoke('start_runtime', { model_id: 'gateway' });
+                    this.addLog('Шлюз API запущен');
+                    document.getElementById('gateway-status').textContent = 'Работает';
+                    document.getElementById('gateway-status').className = 'online';
+                } catch (e) { console.error('Failed to start gateway:', e); }
+            },
+            async copyUrl() {
+                const url = document.getElementById('gateway-url').textContent;
+                await navigator.clipboard.writeText(url);
+                this.addLog('URL скопирован в буфер обмена');
+            },
+            async saveSettings() {
+                const port = document.getElementById('gateway-port').value;
+                const theme = document.getElementById('theme-select').value;
+                document.documentElement.setAttribute('data-theme', theme);
+                this.addLog('Настройки сохранены: порт=' + port + ', тема=' + theme);
+            },
+            async collectDiagnostics() {
+                try {
+                    const status = await this.tauriInvoke('get_status');
+                    const output = document.getElementById('diagnostics-output');
+                    output.textContent = JSON.stringify(JSON.parse(status), null, 2);
+                } catch (e) { console.error('Failed to collect diagnostics:', e); }
+            },
+            async planIntegration(appName) {
+                this.addLog('Планирование настройки интеграции: ' + appName);
+            }
+        };
+        document.addEventListener('DOMContentLoaded', () => { app.init(); });
+    </script>
+</body>
+</html>

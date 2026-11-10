@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <title>FluxAiBot</title>
+    <link rel="icon" type="image/x-icon" href="icons/icon.ico">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="#" aria-label="FluxAiBot — обзор" data-action="go-dashboard">
+                <span class="brand-mark" aria-hidden="true">F</span>
+                <span class="brand-copy">
+                    <strong>FluxAiBot</strong>
+                    <span>LOCAL AI HUB</span>
+                </span>
+            </a>
+
+            <div class="nav-caption">РАБОЧЕЕ ПРОСТРАНСТВО</div>
+            <nav class="primary-nav" aria-label="Основная навигация">
+                <button class="nav-item is-active" type="button" data-section="dashboard" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">◈</span>
+                    <span>Обзор</span>
+                </button>
+                <button class="nav-item" type="button" data-section="models">
+                    <span class="nav-icon" aria-hidden="true">▤</span>
+                    <span>Модели</span>
+                    <span class="nav-count" id="nav-model-count">0</span>
+                </button>
+                <button class="nav-item" type="button" data-section="downloads">
+                    <span class="nav-icon" aria-hidden="true">⇩</span>
+                    <span>Скачать ИИ</span>
+                </button>
+                <button class="nav-item" type="button" data-section="integrations">
+                    <span class="nav-icon" aria-hidden="true">⌘</span>
+                    <span>Приложения</span>
+                </button>
+                <button class="nav-item" type="button" data-section="gateway">
+                    <span class="nav-icon" aria-hidden="true">⌁</span>
+                    <span>API-шлюз</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-spacer"></div>
+            <button class="nav-item nav-settings" type="button" data-section="settings">
+                <span class="nav-icon" aria-hidden="true">⚙</span>
+                <span>Настройки</span>
+            </button>
+
+            <div class="sidebar-runtime">
+                <div class="runtime-indicator">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Проверка…</span>
+                </div>
+                <span class="sidebar-runtime-caption">СОСТОЯНИЕ МОДЕЛИ</span>
+            </div>
+            <div class="sidebar-footer">Локально. Приватно. Под вашим контролем.</div>
+        </aside>
+
+        <div class="workspace">
+            <header class="topbar">
+                <div class="breadcrumb">
+                    <span>FluxAiBot</span>
+                    <span class="breadcrumb-separator">/</span>
+                    <strong id="page-title">Обзор</strong>
+                </div>
+                <div class="topbar-actions">
+                    <span class="gateway-pill" id="gateway-status-pill">
+                        <span class="status-dot" id="gateway-status-dot"></span>
+                        <span id="gateway-status-short">Проверка API…</span>
+                    </span>
+                    <button class="icon-button" type="button" data-action="refresh" aria-label="Обновить состояние" title="Обновить состояние">
+                        <span aria-hidden="true">↻</span>
+                    </button>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="app-message" id="app-message" role="status" aria-live="polite" hidden></div>
+
+                <section id="dashboard" class="section is-active" data-page-title="Обзор">
+                    <div class="welcome-row">
+                        <div>
+                            <p class="eyebrow">ВАША ЛОКАЛЬНАЯ AI-СТАНЦИЯ</p>
+                            <h1>Всё для работы с моделями</h1>
+                            <p class="page-description">Управляйте GGUF-моделями и подключайтесь к локальному API из одного места.</p>
+                        </div>
+                        <span class="date-chip"><span class="live-dot"></span> Работает на этом устройстве</span>
+                    </div>
+
+                    <article class="hero-card">
+                        <div class="hero-copy">
+                            <span class="hero-kicker">ТЕКУЩАЯ МОДЕЛЬ</span>
+                            <h2 id="active-model">Модель не выбрана</h2>
+                            <p id="runtime-summary">Выберите GGUF-файл и запустите его, чтобы начать работу.</p>
+                            <div class="hero-actions">
+                                <button class="btn btn-primary" type="button" data-action="go-models">
+                                    <span aria-hidden="true">＋</span> Открыть модели
+                                </button>
+                                <button class="btn btn-quiet" id="btn-stop-dashboard" type="button" data-action="stop-runtime" disabled>
+                                    Остановить модель
+                                </button>
+                            </div>
+                        </div>
+                        <div class="hero-art" aria-hidden="true">
+                            <div class="orbit orbit-one"></div>
+                            <div class="orbit orbit-two"></div>
+                            <div class="orbit orbit-three"></div>
+                            <div class="orbit-core"><span>F</span></div>
+                            <span class="orbit-spark spark-one">✦</span>
+                            <span class="orbit-spark spark-two">✦</span>
+                        </div>
+                    </article>
+
+                    <div class="stats-grid">
+                        <article class="stat-card">
+                            <span class="stat-icon stat-violet" aria-hidden="true">▤</span>
+                            <div><span class="stat-value" id="stat-models">0</span><span class="stat-label">Найдено моделей</span></div>
+                            <span class="stat-hint">GGUF</span>
+                        </article>
+                        <article class="stat-card">
+                            <span class="stat-icon stat-green" aria-hidden="true">●</span>
+                            <div><span class="stat-value stat-value-text" id="stat-runtime">Остановлена</span><span class="stat-label">Локальная модель</span></div>
+                            <span class="stat-hint" id="runtime-state-hint">Готова к запуску</span>
+                        </article>
+                        <article class="stat-card">
+                            <span class="stat-icon stat-blue" aria-hidden="true">⌘</span>
+                            <div><span class="stat-value" id="stat-integrations">0</span><span class="stat-label">Приложений найдено</span></div>
+                            <span class="stat-hint">только обнаружение</span>
+                        </article>
+                        <article class="stat-card">
+                            <span class="stat-icon stat-amber" aria-hidden="true">⌁</span>
+                            <div><span class="stat-value" id="stat-port">12345</span><span class="stat-label">Порт API-шлюза</span></div>
+                            <span class="stat-hint">только на этом ПК</span>
+                        </article>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <article class="panel activity-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">СОБЫТИЯ</p>
+                                    <h2>Последние действия</h2>
+                                </div>
+                                <button class="text-button" type="button" data-action="clear-log">Очистить</button>
+                            </div>
+                            <div class="activity-log" id="activity-log" aria-live="polite">
+                                <div class="log-empty">Здесь появятся события приложения.</div>
+                            </div>
+                        </article>
+                        <article class="panel connection-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">ПОДКЛЮЧЕНИЕ</p>
+                                    <h2>Локальный API</h2>
+                                </div>
+                                <span class="mini-status" id="gateway-status">Проверка…</span>
+                            </div>
+                            <p class="panel-description">Используйте шлюз, чтобы обращаться к активной модели через OpenAI Chat Completions.</p>
+                            <div class="endpoint-value">
+                                <code id="gateway-url">http://127.0.0.1:12345</code>
+                                <button class="copy-icon" type="button" data-action="copy-url" aria-label="Скопировать адрес API" title="Скопировать адрес">⧉</button>
+                            </div>
+                            <p class="subtle-text" id="runtime-error"></p>
+                            <p class="subtle-text" id="runtime-warning"></p>
+                            <button class="text-button text-button-arrow" type="button" data-action="go-gateway">Настроить подключение <span aria-hidden="true">→</span></button>
+                        </article>
+                    </div>
+                </section>
+
+                <section id="models" class="section" data-page-title="Модели" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">БИБЛИОТЕКА</p>
+                            <h1>Ваши модели</h1>
+                            <p class="page-description">Выберите папку с GGUF-файлами. Быстрый поиск проверяет размер и дату изменения, не читая содержимое больших моделей.</p>
+                        </div>
+                        <button class="btn btn-primary" type="button" data-action="select-folder"><span aria-hidden="true">＋</span> Выбрать папку</button>
+                    </div>
+                    <article class="panel folder-panel">
+                        <span class="folder-icon" aria-hidden="true">▰</span>
+                        <div class="folder-copy">
+                            <span class="field-label">ПАПКА МОДЕЛЕЙ</span>
+                            <strong class="folder-path" id="folder-path">Не выбрана</strong>
+                        </div>
+                        <button class="btn btn-secondary" type="button" data-action="scan-models" id="btn-scan">
+                            <span aria-hidden="true">↻</span> Сканировать
+                        </button>
+                    </article>
+                    <div class="list-toolbar">
+                        <div>
+                            <h2>Доступные модели</h2>
+                            <span class="subtle-text"><span id="model-count">0</span> в текущей папке</span>
+                        </div>
+                        <label class="search-box">
+                            <span aria-hidden="true">⌕</span>
+                            <input type="search" id="model-search" placeholder="Поиск по названию…" autocomplete="off" aria-label="Поиск моделей">
+                        </label>
+                    </div>
+                    <div class="models-grid" id="models-list">
+                        <div class="empty-state">
+                            <span class="empty-icon" aria-hidden="true">▤</span>
+                            <h3>Моделей пока нет</h3>
+                            <p>Выберите папку с файлами .gguf и нажмите «Сканировать».</p>
+                            <button class="btn btn-secondary" type="button" data-action="select-folder">Выбрать папку</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="downloads" class="section" data-page-title="Скачать ИИ" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">КАТАЛОГ HUGGING FACE</p>
+                            <h1>Скачать ИИ-модель</h1>
+                            <p class="page-description">Ищите публичные GGUF-модели. Оценка памяти консервативная и не гарантирует скорость: она зависит от процессора, видеокарты, контекста и других программ.</p>
+                        </div>
+                        <a class="btn btn-secondary" href="https://huggingface.co/models?library=gguf" target="_blank" rel="noopener noreferrer">Открыть Hugging Face ↗</a>
+                    </div>
+                    <div class="notice notice-info">
+                        <span class="notice-icon" aria-hidden="true">i</span>
+                        <p>Показываются только публичные модели без gated-доступа. Перед загрузкой проверьте лицензию и карточку автора. Модели скачиваются в папку библиотеки FluxAiBot; доступно скачивание отдельных файлов и полных наборов GGUF-шардов.</p>
+                    </div>
+                    <article class="panel hub-search-panel">
+                        <label class="field-label" for="hub-search">ПОИСК МОДЕЛЕЙ</label>
+                        <div class="hub-search-row">
+                            <input class="text-control" id="hub-search" type="search" maxlength="160" placeholder="Например: Qwen coder, Llama instruct…" autocomplete="off">
+                            <select class="select-control" id="hub-size-filter" aria-label="Максимальный размер файла модели">
+                                <option value="">Любой размер</option>
+                                <option value="2">До 2 ГБ — лёгкие</option>
+                                <option value="4">До 4 ГБ</option>
+                                <option value="8">До 8 ГБ</option>
+                                <option value="16">До 16 ГБ</option>
+                            </select>
+                            <select class="select-control" id="hub-purpose-filter" aria-label="Для чего нужна модель">
+                                <option value="all">Любая задача</option>
+                                <option value="coding">Для кодинга</option>
+                                <option value="universal">Универсальная / чат</option>
+                                <option value="image" disabled>Фото — пока не поддерживается</option>
+                                <option value="video" disabled>Видео — пока не поддерживается</option>
+                            </select>
+                            <button class="btn btn-primary" type="button" id="hub-search-button" data-action="search-hub-models">Найти модели</button>
+                        </div>
+                        <div class="hub-search-meta">
+                            <span id="hub-hardware-info">Проверка памяти компьютера…</span>
+                            <label class="hub-recommended-filter"><input type="checkbox" id="hub-recommended-only"> Только подходящие по памяти</label>
+                        </div>
+                    </article>
+                    <div class="notice notice-info">
+                        <span class="notice-icon" aria-hidden="true">i</span>
+                        <p>Категория «Для кодинга» определяется по названию и тегам карточки Hugging Face и может быть неточной. Этот runtime запускает текстовые GGUF-модели; анализ/генерация изображений и видео пока не поддерживаются.</p>
+                    </div>
+                    <article class="panel hub-download-progress" id="hub-download-progress" hidden>
+                        <div class="hub-progress-heading">
+                            <strong id="hub-progress-title">Подготовка загрузки…</strong>
+                            <span id="hub-progress-value">0%</span>
+                        </div>
+                        <progress id="hub-progress-bar" max="100" value="0"></progress>
+                        <div class="hub-progress-footer">
+                            <span id="hub-progress-details">Ожидание…</span>
+                            <button class="btn btn-danger btn-small" id="hub-cancel-download" type="button" data-action="cancel-hub-download">Отменить</button>
+                        </div>
+                    </article>
+                    <div class="hub-results-heading">
+                        <h2>Публичные GGUF-модели</h2>
+                        <span class="subtle-text" id="hub-results-count">Введите запрос или покажите популярные модели</span>
+                    </div>
+                    <div class="models-grid" id="hub-models-list">
+                        <div class="empty-state">
+                            <span class="empty-icon" aria-hidden="true">⇩</span>
+                            <h3>Найдите модель на Hugging Face</h3>
+                            <p>FluxAiBot покажет варианты GGUF и оценит требуемую память до загрузки.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="integrations" class="section" data-page-title="Приложения" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">ОБНАРУЖЕНИЕ</p>
+                            <h1>Приложения</h1>
+                            <p class="page-description">Проверяйте наличие инструментов для разработки. FluxAiBot не меняет их настройки автоматически.</p>
+                        </div>
+                        <button class="btn btn-secondary" type="button" data-action="refresh-integrations"><span aria-hidden="true">↻</span> Проверить снова</button>
+                    </div>
+                    <div class="notice notice-info">
+                        <span class="notice-icon" aria-hidden="true">i</span>
+                        <p>Обнаружение не означает подключение. Совместимость и поддерживаемые протоколы указаны отдельно для каждого приложения.</p>
+                    </div>
+                    <div class="integrations-grid" id="integrations-grid">
+                        <div class="empty-state"><p>Загружаем список приложений…</p></div>
+                    </div>
+                </section>
+
+                <section id="gateway" class="section" data-page-title="API-шлюз" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">ДОСТУП К МОДЕЛИ</p>
+                            <h1>API-шлюз</h1>
+                            <p class="page-description">Локальный OpenAI-совместимый endpoint для активной модели. Адрес доступен только на этом устройстве.</p>
+                        </div>
+                        <span class="gateway-pill gateway-pill-large" id="gateway-status-detail"><span class="status-dot"></span><span>Проверка…</span></span>
+                    </div>
+                    <div class="gateway-grid">
+                        <article class="panel gateway-main-card">
+                            <div class="panel-heading">
+                                <div><p class="eyebrow">АДРЕС СЕРВЕРА</p><h2>Подключение</h2></div>
+                                <span class="mini-status" id="gateway-status-card">Проверка…</span>
+                            </div>
+                            <label class="field-label" for="gateway-url-input">Базовый URL</label>
+                            <div class="copy-field">
+                                <input id="gateway-url-input" type="text" value="http://127.0.0.1:12345" readonly>
+                                <button class="btn btn-secondary" type="button" data-action="copy-url">Копировать</button>
+                            </div>
+                            <p class="subtle-text" id="gateway-error"></p>
+                            <div class="divider"></div>
+                            <p class="field-label">ПОДДЕРЖИВАЕМЫЙ ФОРМАТ</p>
+                            <div class="protocol-card"><span class="protocol-mark">OAI</span><div><strong>OpenAI Chat Completions</strong><span>POST /v1/chat/completions</span></div><span class="support-tag">Доступно</span></div>
+                            <p class="subtle-text">OpenAI Responses API и Anthropic Messages API не реализованы.</p>
+                        </article>
+                        <article class="panel token-card">
+                            <div class="panel-heading">
+                                <div><p class="eyebrow">БЕЗОПАСНОСТЬ</p><h2>Токен доступа</h2></div>
+                                <span class="lock-icon" aria-hidden="true">▣</span>
+                            </div>
+                            <p class="panel-description">Токен нужен для запросов к моделям. Он создаётся для этого запуска приложения и показывается только по запросу.</p>
+                            <label class="field-label" for="gateway-token">BEARER TOKEN</label>
+                            <div class="copy-field token-field">
+                                <input id="gateway-token" type="password" value="" autocomplete="off" readonly placeholder="••••••••••••••••">
+                                <button class="btn btn-secondary" id="token-toggle" type="button" data-action="toggle-token">Показать</button>
+                            </div>
+                            <button class="btn btn-primary btn-full" type="button" data-action="copy-token">Скопировать токен</button>
+                            <p class="subtle-text">Не публикуйте токен и не отправляйте его в сторонние сервисы.</p>
+                        </article>
+                    </div>
+                    <article class="panel endpoint-panel">
+                        <div class="panel-heading">
+                            <div><p class="eyebrow">СПРАВОЧНИК</p><h2>Эндпоинты</h2></div>
+                            <span class="subtle-text">Модельные запросы требуют Bearer-токен</span>
+                        </div>
+                        <div class="endpoint-table-wrap">
+                            <table class="endpoint-table">
+                                <thead><tr><th>Метод</th><th>Путь</th><th>Назначение</th></tr></thead>
+                                <tbody>
+                                    <tr><td><span class="method method-get">GET</span></td><td><code>/health</code></td><td>Проверка доступности шлюза</td></tr>
+                                    <tr><td><span class="method method-get">GET</span></td><td><code>/v1/models</code></td><td>Список обнаруженных моделей</td></tr>
+                                    <tr><td><span class="method method-post">POST</span></td><td><code>/v1/chat/completions</code></td><td>Чат с активной моделью</td></tr>
+                                    <tr><td><span class="method method-get">GET</span></td><td><code>/hub/v1/capabilities</code></td><td>Возможности шлюза</td></tr>
+                                    <tr><td><span class="method method-get">GET</span></td><td><code>/hub/v1/status</code></td><td>Состояние локального runtime</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="subtle-text">Проверьте, что модель запущена, прежде чем отправлять запросы на генерацию.</p>
+                    </article>
+                </section>
+
+                <section id="settings" class="section" data-page-title="Настройки" hidden>
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">ПЕРСОНАЛИЗАЦИЯ</p>
+                            <h1>Настройки</h1>
+                            <p class="page-description">Настройки интерфейса и информация о локальных данных приложения.</p>
+                        </div>
+                    </div>
+                    <div class="settings-grid">
+                        <article class="panel settings-card">
+                            <div class="panel-heading"><div><p class="eyebrow">ИНТЕРФЕЙС</p><h2>Внешний вид</h2></div><span class="settings-icon" aria-hidden="true">◐</span></div>
+                            <label class="field-label" for="theme-select">Цветовая тема</label>
+                            <select id="theme-select" class="select-control">
+                                <option value="dark">Тёмная</option>
+                                <option value="light">Светлая</option>
+                            </select>
+                            <p class="subtle-text">Предпросмотр применяется сразу. Нажмите «Сохранить тему», чтобы запомнить выбор.</p>
+                            <button class="btn btn-primary" type="button" data-action="save-settings">Сохранить тему</button>
+                        </article>
+                        <article class="panel settings-card">
+                            <div class="panel-heading"><div><p class="eyebrow">ЛОКАЛЬНЫЕ ДАННЫЕ</p><h2>Хранилище приложения</h2></div><span class="settings-icon" aria-hidden="true">▰</span></div>
+                            <p class="field-label">ПАПКА ДАННЫХ</p>
+                            <code class="data-path" id="data-dir">Загрузка…</code>
+                            <div class="setting-row"><span>Порт API-шлюза</span><code id="gateway-port">12345</code></div>
+                            <p class="subtle-text">Модели остаются в выбранной вами папке. Настройки и SQLite-база находятся в папке данных.</p>
+                        </article>
+                    </div>
+                    <article class="panel diagnostics-panel">
+                        <div class="panel-heading">
+                            <div><p class="eyebrow">ПОДДЕРЖКА</p><h2>Диагностика</h2></div>
+                            <button class="btn btn-secondary" type="button" data-action="collect-diagnostics">Обновить данные</button>
+                        </div>
+                        <p class="panel-description">Сводка технического состояния. Секреты и содержимое запросов в неё не включаются.</p>
+                        <pre class="diagnostics-output" id="diagnostics-output">Нажмите «Обновить данные», чтобы получить текущее состояние.</pre>
+                    </article>
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
