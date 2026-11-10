@@ -5,6 +5,9 @@ $releaseName = "release-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 $releaseDirectory = Join-Path $root "dist\$releaseName"
 $portableSource = Join-Path $root 'target\release\local_ai_hub.exe'
 $nsisDirectory = Join-Path $root 'target\release\bundle\nsis'
+$appVersion = (Get-Content -LiteralPath (Join-Path $root 'src-tauri\tauri.conf.json') -Raw |
+    ConvertFrom-Json).version
+$installerName = "FluxAiBot_${appVersion}_x64-setup.exe"
 
 if (Test-Path -LiteralPath $releaseDirectory) {
     throw "Release output already exists: $releaseDirectory"
@@ -33,12 +36,12 @@ if ($LASTEXITCODE -ne 0) {
     throw 'NSIS installer build failed.'
 }
 
-$installers = @(Get-ChildItem -LiteralPath $nsisDirectory -File -Filter '*-setup.exe')
-if ($installers.Count -ne 1) {
-    throw "Expected one NSIS setup executable in $nsisDirectory; found $($installers.Count)."
+$installer = Join-Path $nsisDirectory $installerName
+if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+    throw "NSIS setup executable for version $appVersion is missing: $installer"
 }
 
-Copy-Item -LiteralPath $installers[0].FullName `
+Copy-Item -LiteralPath $installer `
     -Destination (Join-Path $releaseDirectory 'FluxAiBot-setup.exe')
 
 $checksumLines = @(
