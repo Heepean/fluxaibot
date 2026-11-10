@@ -2,6 +2,10 @@
 
 FluxAiBot is a Windows desktop application for running local GGUF models through a bundled `llama.cpp` server and accessing the active model through a loopback-only HTTP gateway.
 
+## Interface languages
+
+The interface supports English, Russian, Ukrainian, Spanish, Simplified Chinese, German, French, Brazilian Portuguese, Japanese, and Arabic. By default, FluxAiBot follows the Windows language; you can choose another language in **Settings → Interface language**. Your choice is saved on this device. Unsupported Windows languages fall back to English. Core navigation, labels, statuses, and controls are localized; some technical messages and text supplied by other applications may remain in their original language.
+
 ![FluxAiBot model catalog](docs/screenshots/fluxaibot.png)
 
 [Download the latest release](https://github.com/Heepean/fluxaibot/releases/latest) — portable EXE, installer, and SHA-256 checksums.

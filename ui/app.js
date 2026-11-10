@@ -20,6 +20,7 @@ const app = {
     hubDownloadPoll: null,
 
     async init() {
+        window.FluxAiBotI18n.init();
         this.setupNavigation();
         this.setupActions();
         this.setupModelSearch();
@@ -45,6 +46,13 @@ const app = {
 
         document.getElementById('theme-select').addEventListener('change', event => {
             this.applyTheme(event.target.value);
+        });
+        document.getElementById('language-select').addEventListener('change', event => {
+            try {
+                window.FluxAiBotI18n.setLanguage(event.target.value);
+            } catch (error) {
+                this.showMessage(`Не удалось сохранить язык интерфейса: ${this.errorMessage(error)}`);
+            }
         });
         document.getElementById('hub-search').addEventListener('keydown', event => {
             if (event.key === 'Enter') this.searchHubModels();
@@ -509,7 +517,8 @@ const app = {
             name.textContent = model.repo_id;
             const meta = document.createElement('span');
             meta.className = 'model-size';
-            meta.textContent = `↓ ${Number(model.downloads || 0).toLocaleString('ru-RU')} · ♥ ${Number(model.likes || 0).toLocaleString('ru-RU')}`;
+            const locale = window.FluxAiBotI18n.getLocale();
+            meta.textContent = `↓ ${Number(model.downloads || 0).toLocaleString(locale)} · ♥ ${Number(model.likes || 0).toLocaleString(locale)}`;
             title.append(name, meta);
             head.append(symbol, title);
             const repoLink = document.createElement('a');
@@ -662,9 +671,10 @@ const app = {
 
     renderModels(modelList) {
         const grid = document.getElementById('models-list');
-        const query = document.getElementById('model-search').value.trim().toLocaleLowerCase('ru');
+        const locale = window.FluxAiBotI18n.getLocale();
+        const query = document.getElementById('model-search').value.trim().toLocaleLowerCase(locale);
         const filtered = modelList.filter(model =>
-            String(model.display_name || '').toLocaleLowerCase('ru').includes(query)
+            String(model.display_name || '').toLocaleLowerCase(locale).includes(query)
         );
         document.getElementById('model-count').textContent =
             query ? `${filtered.length} из ${modelList.length}` : String(modelList.length);
@@ -927,8 +937,13 @@ const app = {
     formatBytes(bytes) {
         const value = Number(bytes);
         if (!Number.isFinite(value) || value < 0) return 'Размер неизвестен';
-        if (value < 1024 ** 3) return `${(value / 1024 ** 2).toFixed(1)} МБ`;
-        return `${(value / 1024 ** 3).toFixed(2)} ГБ`;
+        const locale = window.FluxAiBotI18n.getLocale();
+        const formatter = new Intl.NumberFormat(locale, {
+            minimumFractionDigits: value < 1024 ** 3 ? 1 : 2,
+            maximumFractionDigits: value < 1024 ** 3 ? 1 : 2
+        });
+        if (value < 1024 ** 3) return `${formatter.format(value / 1024 ** 2)} MB`;
+        return `${formatter.format(value / 1024 ** 3)} GB`;
     },
 
     errorMessage(error) {
