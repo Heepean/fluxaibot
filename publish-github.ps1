@@ -27,6 +27,20 @@ function Invoke-Gh {
     }
 }
 
+function Get-Sha256Hex {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $stream = [System.IO.File]::OpenRead($Path)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return [BitConverter]::ToString($sha256.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    }
+    finally {
+        $sha256.Dispose()
+        $stream.Dispose()
+    }
+}
+
 Set-Location -LiteralPath $root
 
 if (-not (Test-Path -LiteralPath (Join-Path $root '.git') -PathType Container)) {
@@ -64,7 +78,7 @@ foreach ($line in Get-Content -LiteralPath $checksumFile) {
     if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf)) {
         throw "Checksum references a missing release asset: $assetPath"
     }
-    $actualHash = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash
+    $actualHash = Get-Sha256Hex -Path $assetPath
     if ($actualHash -ine $Matches[1]) {
         throw "SHA-256 verification failed for $assetPath"
     }
