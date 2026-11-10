@@ -8,6 +8,11 @@ $assetNames = @(
     'FluxAiBot-setup.exe',
     'SHA256SUMS.txt'
 )
+$appConfig = Get-Content -LiteralPath (Join-Path $root 'src-tauri\tauri.conf.json') -Raw |
+    ConvertFrom-Json
+$releaseVersion = $appConfig.version
+$releaseTag = "v$releaseVersion"
+$releaseNotes = Join-Path $root "docs\RELEASE_NOTES_$releaseTag.md"
 
 function Invoke-Git {
     param([Parameter(Mandatory)][string[]]$Arguments)
@@ -52,8 +57,8 @@ if ((git status --porcelain)) {
 if (-not (git rev-parse --verify 'refs/heads/main' 2>$null)) {
     throw 'The main branch is missing.'
 }
-if (-not (git rev-parse --verify 'refs/tags/v1.0.0' 2>$null)) {
-    throw 'The v1.0.0 release tag is missing.'
+if (-not (Test-Path -LiteralPath $releaseNotes -PathType Leaf)) {
+    throw "Release notes are missing: $releaseNotes"
 }
 $releaseDirectory = Get-ChildItem -LiteralPath (Join-Path $root 'dist') -Directory |
     Sort-Object LastWriteTime -Descending |
@@ -84,7 +89,7 @@ foreach ($line in Get-Content -LiteralPath $checksumFile) {
     }
 }
 
-Write-Host 'FluxAiBot v1.0.0 release files and checksums are verified.' -ForegroundColor Green
+Write-Host "FluxAiBot $releaseTag release files and checksums are verified." -ForegroundColor Green
 
 & gh auth status *> $null
 if ($LASTEXITCODE -ne 0) {
@@ -116,16 +121,15 @@ elseif ($remote -ne $remoteUrl -and $remote -ne 'git@github.com:Heepean/fluxaibo
 Invoke-Git -Arguments @('lfs', 'install', '--local')
 Invoke-Gh -Arguments @(
     'repo', 'edit', $repository,
-    '--description', 'Run local GGUF AI models on Windows with CUDA, Vulkan and CPU fallback, Hugging Face model search, and a loopback-only API.',
+    '--description', 'Run local GGUF AI models on Windows with CUDA, Vulkan and CPU fallback, Hugging Face model search, a loopback-only API, and a 10-language interface that follows Windows or your choice.',
     '--homepage', "https://github.com/$repository/releases/latest"
 )
 
 Write-Host 'Pushing the main branch and LFS-backed runtime files. This may take a while.' -ForegroundColor Cyan
 Invoke-Git -Arguments @('push', '--set-upstream', 'origin', 'main')
-Invoke-Git -Arguments @('push', 'origin', 'refs/tags/v1.0.0')
 
 $release = $null
-& gh release view v1.0.0 --repo $repository --json url,assets 2>$null | ForEach-Object {
+& gh release view $releaseTag --repo $repository --json url,assets 2>$null | ForEach-Object {
     try {
         $release = $_ | ConvertFrom-Json
     }
@@ -135,13 +139,18 @@ $release = $null
 }
 
 if (-not $release) {
+    if (-not (git rev-parse --verify "refs/tags/$releaseTag" 2>$null)) {
+        Invoke-Git -Arguments @('tag', '-a', $releaseTag, '-m', "FluxAiBot $releaseTag")
+    }
+    Invoke-Git -Arguments @('push', 'origin', "refs/tags/$releaseTag")
     Invoke-Gh -Arguments @(
-        'release', 'create', 'v1.0.0',
+        'release', 'create', $releaseTag,
         '--repo', $repository,
-        '--title', 'FluxAiBot v1.0.0',
-        '--notes-file', (Join-Path $root 'docs\RELEASE_NOTES_v1.0.0.md')
+        '--title', "FluxAiBot $releaseTag",
+        '--notes-file', $releaseNotes,
+        '--latest'
     )
-    $release = (& gh release view v1.0.0 --repo $repository --json url,assets | ConvertFrom-Json)
+    $release = (& gh release view $releaseTag --repo $repository --json url,assets | ConvertFrom-Json)
 }
 
 $existingAssetNames = @($release.assets | ForEach-Object name)
@@ -150,12 +159,12 @@ $assetsToUpload = @($releaseAssets | Where-Object {
 })
 if ($assetsToUpload.Count -gt 0) {
     Invoke-Gh -Arguments (@(
-        'release', 'upload', 'v1.0.0',
+        'release', 'upload', $releaseTag,
         '--repo', $repository
     ) + $assetsToUpload)
 }
 
-$finalRelease = & gh release view v1.0.0 --repo $repository --json url,assets
+$finalRelease = & gh release view $releaseTag --repo $repository --json url,assets
 if ($LASTEXITCODE -ne 0) {
     throw 'Release was published, but its final verification failed.'
 }

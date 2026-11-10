@@ -17,7 +17,7 @@ The interface supports English, Russian, Ukrainian, Spanish, Simplified Chinese,
 3. Start a model from the results.
 4. In **API Gateway**, copy the gateway token when needed. The token is generated for the current application run and is not shown until requested.
 
-See the [Russian user guide](docs/USER_GUIDE_RU.md) and [v1.0.0 release notes](docs/RELEASE_NOTES_v1.0.0.md) for installation, model selection, GPU behavior, API setup, and limitations.
+See the [Russian user guide](docs/USER_GUIDE_RU.md) and [v1.1.0 release notes](docs/RELEASE_NOTES_v1.1.0.md) for installation, model selection, GPU behavior, API setup, and limitations.
 
 On Windows, run `Publish-to-GitHub.bat` to push the prepared source and release. If needed, it opens the official browser sign-in before publishing to [GitHub Releases](https://github.com/Heepean/fluxaibot/releases).
 
